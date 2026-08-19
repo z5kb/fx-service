@@ -1,6 +1,8 @@
 package org.example.service;
 
+import org.example.model.FxRatesApiClientResponse;
+
 public interface ApiClientService {
 
-    public void fetch();
+    public FxRatesApiClientResponse fetch();
 }

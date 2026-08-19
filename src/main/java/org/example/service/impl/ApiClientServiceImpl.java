@@ -1,5 +1,6 @@
 package org.example.service.impl;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -28,10 +29,17 @@ public class ApiClientServiceImpl implements ApiClientService {
     }
 
     @Override
-    public void fetch() {
+    public FxRatesApiClientResponse fetch() {
+        // check for cached data
+        FxRatesApiClientResponse cachedData = cachingService.getFxRatesData();
+        if (cachedData != null) {
+            System.out.println("did not call the API, there is valid cached data");
+            return cachedData;
+        }
+
+        // no cached data, call the API
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(GET_FX_RATES_REQUEST_URL)).GET().build();
-
         try {
             HttpResponse<String> responseRaw = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -48,15 +56,17 @@ public class ApiClientServiceImpl implements ApiClientService {
             // Fill the data inside a data class
             FxRatesApiClientResponse response = new FxRatesApiClientResponse();
             response.setSuccessfulRequest(responseJson.get("result").getAsString().equals(REQUEST_WAS_A_SUCCESS_STRING));
-            response.setTimeLastUpdateTimestamp(responseJson.get("time_last_update_unix").getAsString());
-            response.setTimeNextUpdateTimestamp(responseJson.get("time_next_update_unix").getAsString());
+            response.setTimeLastUpdateTimestamp(responseJson.get("time_last_update_unix").getAsLong());
+            response.setTimeNextUpdateTimestamp(responseJson.get("time_next_update_unix").getAsLong());
             response.setBaseCurrencyCode(responseJson.get("base_code").getAsString());
             response.setCurrencyRates(rates);
 
             cachingService.cache(response);
+            return response;
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null; // TODO handle this
     }
 
     // The URL which provides the FX rates
