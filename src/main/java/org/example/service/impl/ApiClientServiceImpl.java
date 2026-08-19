@@ -1,6 +1,5 @@
 package org.example.service.impl;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -24,12 +23,10 @@ public class ApiClientServiceImpl implements ApiClientService {
     private final CachingService cachingService;
 
     @Autowired
-    public ApiClientServiceImpl(CachingService cachingService) {
-        this.cachingService = cachingService;
-    }
+    public ApiClientServiceImpl(CachingService cachingService) { this.cachingService = cachingService; }
 
     @Override
-    public FxRatesApiClientResponse fetch() {
+    public synchronized FxRatesApiClientResponse fetch() {
         // check for cached data
         FxRatesApiClientResponse cachedData = cachingService.getFxRatesData();
         if (cachedData != null) {
@@ -61,7 +58,7 @@ public class ApiClientServiceImpl implements ApiClientService {
             response.setBaseCurrencyCode(responseJson.get("base_code").getAsString());
             response.setCurrencyRates(rates);
 
-            cachingService.cache(response);
+            cachingService.cacheFxRatesData(response);
             return response;
         } catch (Exception e) {
             e.printStackTrace();
