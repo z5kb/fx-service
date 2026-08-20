@@ -21,8 +21,8 @@ public class CachingServiceImpl implements CachingService {
     }
 
     @Override
-    public void cacheFxRatesData(FxRatesApiClientResponse response) {
-        redis().setex(response.getBaseCurrencyCode(), response.getTimeNextUpdateTimestamp(), gson.toJson(response));
+    public void cacheFxRatesData(FxRatesApiClientResponse response, Long secondsUntilExpiration) {
+        redis().setex(response.getBaseCurrencyCode(), secondsUntilExpiration, gson.toJson(response));
         System.out.println("cached " + response.getBaseCurrencyCode()); // TODO remove
     }
 

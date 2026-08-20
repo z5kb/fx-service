@@ -58,7 +58,10 @@ public class ApiClientServiceImpl implements ApiClientService {
             response.setBaseCurrencyCode(responseJson.get("base_code").getAsString());
             response.setCurrencyRates(rates);
 
-            cachingService.cacheFxRatesData(response);
+            cachingService.cacheFxRatesData(
+                    response,
+                    response.getTimeNextUpdateTimestamp() - System.currentTimeMillis() / 1000
+            );
             return response;
         } catch (Exception e) {
             e.printStackTrace();
