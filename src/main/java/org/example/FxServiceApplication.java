@@ -17,6 +17,8 @@ public class FxServiceApplication {
 
     @Bean
     public CommandLineRunner run(FxService fxService) {
-        return args -> {};
+        return args -> {
+//            System.out.println("printing environment variables" + System.getenv());
+        };
     }
 }
