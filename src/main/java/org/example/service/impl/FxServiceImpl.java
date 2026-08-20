@@ -10,23 +10,22 @@ import org.example.service.PersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Service
 public class FxServiceImpl implements FxService {
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledFuture<?> pollFuture;
 
     private final ApiClientService apiClientService;
 
@@ -62,7 +61,18 @@ public class FxServiceImpl implements FxService {
     }
 
     @Override
-    public Conversion createConversion(CreateCurrencyConversionRequest req) {
+    public Conversion createConversion(CreateCurrencyConversionRequest req, String idempotencyKey) {
+
+        // check for idempotency if the key is provided by the client
+        if (idempotencyKey != null) {
+            if (!persistenceService.uniqueByIdempotencyKey(idempotencyKey)) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "A request with this Idempotency-Key is already being processed"
+                );
+            }
+        }
+
         List<org.example.persistence.model.Balance> clientBalances = persistenceService.getBalances(req.getClientId());
         BigDecimal sourceBalance = null;
         BigDecimal targetBalance = null;
@@ -70,13 +80,20 @@ public class FxServiceImpl implements FxService {
             if (balance.getCurrency().getCode().equals(req.getSourceCurrency())) { sourceBalance = balance.getAmount(); }
             if (balance.getCurrency().getCode().equals(req.getTargetCurrency())) { targetBalance = balance.getAmount(); }
         }
-        // TODO throw exception - client trying to convert from/to currency they don't own
-        assert sourceBalance != null;
-        assert targetBalance != null;
+        if (sourceBalance == null || targetBalance == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_CONTENT,
+                    "Client trying to convert between currencies they don't own"
+            );
+        }
 
         BigDecimal newSourceBalance = sourceBalance.subtract(req.getAmount());
-        // TODO throw exception - client doesn't have enough source money
-        assert newSourceBalance.compareTo(BigDecimal.ZERO) >= 0;
+        if (newSourceBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_CONTENT,
+                    "Client doesn't have enough " + req.getSourceCurrency()
+            );
+        }
 
         BigDecimal conversionRate = getExchangeRate(req.getSourceCurrency(), req.getTargetCurrency());
         BigDecimal targetAmountCredit = req.getAmount().multiply(conversionRate) ;
@@ -84,6 +101,7 @@ public class FxServiceImpl implements FxService {
 
         ConvertTransaction convertTransaction = persistenceService.convert(
                 req,
+                idempotencyKey,
                 conversionRate,
                 LocalDateTime.now(),
                 targetAmountCredit,
@@ -110,11 +128,11 @@ public class FxServiceImpl implements FxService {
 
         Page<ConvertTransaction> convertTransactions;
         if (clientId != null) {
-            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByClientId(clientId, pageable);;
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByClientId(clientId, pageable);
         } else if (transactionId != null) {
-            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedById(transactionId, pageable);;
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedById(transactionId, pageable);
         } else if (timestamp != null) {
-            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByTimestamp(timestamp, pageable);;
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByTimestamp(timestamp, pageable);
         } else { // this should never be reached as it's being checked in the controller as well
             throw new IllegalArgumentException("At least 1 parameter was expected to not be null.");
         }

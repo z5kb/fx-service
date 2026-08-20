@@ -13,13 +13,22 @@ public class FxRatesApiClientResponse {
     private Map<String, BigDecimal> currencyRates;
 
     public Boolean getSuccessfulRequest() { return successfulRequest; }
+
     public void setSuccessfulRequest(Boolean successfulRequest) { this.successfulRequest = successfulRequest; }
+
     public Long getTimeLastUpdateTimestamp() { return timeLastUpdateTimestamp; }
+
     public void setTimeLastUpdateTimestamp(Long timeLastUpdateTimestamp) { this.timeLastUpdateTimestamp = timeLastUpdateTimestamp; }
+
     public Long getTimeNextUpdateTimestamp() { return timeNextUpdateTimestamp; }
+
     public void setTimeNextUpdateTimestamp(Long timeNextUpdateTimestamp) { this.timeNextUpdateTimestamp = timeNextUpdateTimestamp; }
+
     public String getBaseCurrencyCode() { return baseCurrencyCode; }
+
     public void setBaseCurrencyCode(String baseCurrencyCode) { this.baseCurrencyCode = baseCurrencyCode; }
+
     public Map<String, BigDecimal> getCurrencyRates() { return currencyRates; }
+
     public void setCurrencyRates(Map<String, BigDecimal> currencyRates) { this.currencyRates = currencyRates; }
 }

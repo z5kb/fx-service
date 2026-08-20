@@ -21,7 +21,6 @@ public class Balance {
 
     private BigDecimal amount;
 
-    // Getters/Setters
     public Long getId() {
         return id;
     }

@@ -25,6 +25,6 @@ public interface FxController {
         int size
     );
 
-    ResponseEntity<Conversion> performConversion(@RequestBody CreateCurrencyConversionRequest request);
+    ResponseEntity<Conversion> performConversion(CreateCurrencyConversionRequest request, String idempotencyKey);
 
 }

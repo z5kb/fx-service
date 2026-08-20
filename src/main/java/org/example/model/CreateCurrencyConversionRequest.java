@@ -7,8 +7,6 @@ public class CreateCurrencyConversionRequest {
     private String sourceCurrency;
     private BigDecimal amount;
     private String targetCurrency;
-    // Getters and Setters
-
 
     public Long getClientId() {
         return clientId;

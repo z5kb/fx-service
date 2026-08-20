@@ -1,6 +1,5 @@
 package org.example.service.impl;
 
-import org.example.model.Conversion;
 import org.example.model.CreateCurrencyConversionRequest;
 import org.example.persistence.BalanceRepository;
 import org.example.persistence.ClientRepository;
@@ -51,6 +50,7 @@ public class PersistenceServiceImpl implements PersistenceService {
     @Transactional(rollbackFor = Exception.class)
     public ConvertTransaction convert(
             CreateCurrencyConversionRequest conversion,
+            String idempotencyKey,
             BigDecimal conversionRate,
             LocalDateTime timestamp,
             BigDecimal targetAmountCredit,
@@ -59,6 +59,7 @@ public class PersistenceServiceImpl implements PersistenceService {
             List<Balance> clientBalances
     ) {
         ConvertTransaction transaction = new ConvertTransaction();
+        transaction.setIdempotencyKey(idempotencyKey);
         transaction.setTimestamp(timestamp);
         transaction.setSourceAmount(conversion.getAmount());
         transaction.setSourceCurrency(currencyRepository.findByCode(conversion.getSourceCurrency()).get()); // TODO handle optional
@@ -94,16 +95,21 @@ public class PersistenceServiceImpl implements PersistenceService {
 
     @Override
     public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedByClientId(Long clientId, Pageable pageable) {
-        return transactionRepository.findByClientId(clientId, pageable);
+        return transactionRepository.findByClientId(clientId, pageable).get(); // TODO handle with a good exception
     }
 
     @Override
     public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedById(Long id, Pageable pageable) {
-        return transactionRepository.findById(id, pageable);
+        return transactionRepository.findById(id, pageable).get(); // TODO handle with a good exception
     }
 
     @Override
     public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedByTimestamp(LocalDateTime timestamp, Pageable pageable) {
-        return transactionRepository.findByTimestamp(timestamp, pageable);
+        return transactionRepository.findByTimestamp(timestamp, pageable).get(); // TODO handle with a good exception
+    }
+
+    @Override
+    public Boolean uniqueByIdempotencyKey(String idempotencyKey) {
+        return transactionRepository.findByIdempotencyKey(idempotencyKey).get().isEmpty(); // TODO handle with a good exception
     }
 }

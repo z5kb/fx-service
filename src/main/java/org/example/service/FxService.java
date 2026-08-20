@@ -24,7 +24,7 @@ public interface FxService {
     public List<Balance> getBalances(Long clientId);
 
     // perform a conversion between 2 currencies
-    public Conversion createConversion(CreateCurrencyConversionRequest createCurrencyConversionRequest);
+    public Conversion createConversion(CreateCurrencyConversionRequest createCurrencyConversionRequest, String idempotencyKey);
 
     // get currency conversions
     public Page<Conversion> getConversions(Long transactionId, LocalDateTime timestamp, Long clientId, Pageable pageable);

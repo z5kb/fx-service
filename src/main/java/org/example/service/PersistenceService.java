@@ -19,6 +19,7 @@ public interface PersistenceService {
     // perform a conversion between 2 currencies
     public ConvertTransaction convert(
             CreateCurrencyConversionRequest conversion,
+            String idempotencyKey,
             BigDecimal conversionRate,
             LocalDateTime timestamp,
             BigDecimal targetAmountCredit,
@@ -32,4 +33,5 @@ public interface PersistenceService {
     public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedById(Long id, Pageable pageable);
     public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedByTimestamp(LocalDateTime timestamp, Pageable pageable);
 
+    public Boolean uniqueByIdempotencyKey(String idempotencyKey);
 }

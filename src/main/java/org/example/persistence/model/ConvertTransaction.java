@@ -13,6 +13,8 @@ public class ConvertTransaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String idempotencyKey;
+
     private LocalDateTime timestamp;
 
     private BigDecimal sourceAmount;
@@ -37,15 +39,22 @@ public class ConvertTransaction {
     @JoinColumn(name = "client_id")
     private Client client;
 
-    public ConvertTransaction() {}
+//    public ConvertTransaction() {}
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public LocalDateTime getTimestamp() {

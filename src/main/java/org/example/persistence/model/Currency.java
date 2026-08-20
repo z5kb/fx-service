@@ -12,7 +12,6 @@ public class Currency {
 
     private String code;
 
-    // Getters/Setters
     public Long getId() {
         return id;
     }

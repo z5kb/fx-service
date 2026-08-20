@@ -46,9 +46,7 @@ public class ApiClientServiceImpl implements ApiClientService {
             JsonObject responseJson = JsonParser.parseString(responseRaw.body()).getAsJsonObject();
             Map<String, JsonElement> ratesRaw = responseJson.getAsJsonObject("rates").asMap();
             Map<String, BigDecimal> rates = new HashMap<>(Map.of());
-            ratesRaw.forEach((key, value) -> {
-               rates.put(key, value.getAsBigDecimal());
-            });
+            ratesRaw.forEach((key, value) -> rates.put(key, value.getAsBigDecimal()));
 
             // Fill the data inside a data class
             FxRatesApiClientResponse response = new FxRatesApiClientResponse();

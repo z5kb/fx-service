@@ -15,7 +15,6 @@ public class Conversion {
     private BigDecimal newTargetBalance;
     private Long clientId;
 
-    // Getters and Setters
     public LocalDateTime getTimestamp() {
         return timestamp;
     }

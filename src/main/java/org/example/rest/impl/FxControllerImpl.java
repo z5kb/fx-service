@@ -55,8 +55,11 @@ public class FxControllerImpl implements FxController {
     }
 
     @PostMapping("/conversions")
-    public ResponseEntity<Conversion> performConversion(@RequestBody CreateCurrencyConversionRequest request) {
-        Conversion response = fxService.createConversion(request);
+    public ResponseEntity<Conversion> performConversion(
+            @RequestBody CreateCurrencyConversionRequest request,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
+    ) {
+        Conversion response = fxService.createConversion(request, idempotencyKey);
         return ResponseEntity.ok(response);
     }
 }

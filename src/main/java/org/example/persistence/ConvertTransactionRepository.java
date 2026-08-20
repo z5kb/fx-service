@@ -8,12 +8,15 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ConvertTransactionRepository extends JpaRepository<ConvertTransaction, Long> {
-    Page<ConvertTransaction> findByClientId(Long clientId, Pageable pageable);
+    Optional<Page<ConvertTransaction>> findByClientId(Long clientId, Pageable pageable);
 
-    Page<ConvertTransaction> findById(Long id, Pageable pageable);
+    Optional<Page<ConvertTransaction>> findById(Long id, Pageable pageable);
 
-    Page<ConvertTransaction> findByTimestamp(LocalDateTime timestamp, Pageable pageable);
+    Optional<Page<ConvertTransaction>> findByTimestamp(LocalDateTime timestamp, Pageable pageable);
+
+    Optional<List<ConvertTransaction>> findByIdempotencyKey(String idempotencyKey);
 }

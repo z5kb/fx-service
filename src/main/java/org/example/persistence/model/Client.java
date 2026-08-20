@@ -21,7 +21,6 @@ public class Client {
     @OneToMany(mappedBy = "client", cascade = CascadeType.ALL)
     private List<Balance> balances;
 
-    // Getters/Setters
     public Long getId() {
         return id;
     }
