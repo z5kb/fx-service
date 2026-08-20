@@ -6,6 +6,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.math.BigDecimal;
+
 @SpringBootApplication
 public class FxServiceApplication {
 
@@ -19,6 +21,8 @@ public class FxServiceApplication {
             fxService.prepareFxRatesData("EUR");
             fxService.getConversionRate("USD", "EUR");
             fxService.getBalances(1L);
+            fxService.createConversion(1L, "USD", BigDecimal.valueOf(200L), "EUR");
+            fxService.createConversion(1L, "USD", BigDecimal.valueOf(200L), "EUR");
         };
     }
 
