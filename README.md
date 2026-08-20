@@ -2,23 +2,23 @@
 
 There is a docker-compose file which sets everything up, but the spring container can't communicate with redis.
 I looked into this for a long time but couldn't find a way to resolve it. The second-best option is to run
-the spring application after running the compose file.
+the spring application after running the compose file (see #Build and start).
 
 As for configuration, everything should be configured automatically. The H2 console is turned on by default - it is
-reachable at [here](http://localhost:8080/h2-console) (datasource URL: ``jdbc:h2:mem:testdb``; default login credentials).
+reachable [here](http://localhost:8080/h2-console) (datasource URL: ``jdbc:h2:mem:testdb``; default login credentials).
 
-Build and start:
+##### Build and start:
 ```sh
 docker compose up -d
 java -jar target/fx-service-1.0-SNAPSHOT.jar
 ```
 
-Shutdown:
+##### Shutdown:
 ```sh
 docker compose down
 ```
 
-Shutdown + cleanup:
+##### Shutdown + cleanup:
 ```sh
 docker compose down
 docker stop fx-service fx-service-redis confident_ishizaka
@@ -50,5 +50,6 @@ time on this, I'm sure it can be better), PG SQL instead of H2.
 Client with id 1:
 - balance in USD (currency id 1): 10000
 - balance in EUR (currency id 2): 8000
-  Client with id 2:
+
+Client with id 2:
 - balance in GBP (currency id 3): 5000
