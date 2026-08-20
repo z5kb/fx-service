@@ -19,10 +19,8 @@ public class FxServiceApplication {
     public CommandLineRunner run(FxService fxService) {
         return args -> { // TODO remove this and use FxController exclusively
             fxService.prepareFxRatesData("EUR");
-            fxService.getConversionRate("USD", "EUR");
-            fxService.getBalances(1L);
-            fxService.createConversion(1L, "USD", BigDecimal.valueOf(200L), "EUR");
-            fxService.createConversion(1L, "USD", BigDecimal.valueOf(200L), "EUR");
+//            fxService.getConversionRate("USD", "EUR");
+//            fxService.getBalances(1L);
         };
     }
 

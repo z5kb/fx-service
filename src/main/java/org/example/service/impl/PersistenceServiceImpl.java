@@ -1,6 +1,7 @@
 package org.example.service.impl;
 
 import org.example.model.Conversion;
+import org.example.model.CreateCurrencyConversionRequest;
 import org.example.persistence.BalanceRepository;
 import org.example.persistence.ClientRepository;
 import org.example.persistence.ConvertTransactionRepository;
@@ -8,10 +9,13 @@ import org.example.persistence.CurrencyRepository;
 import org.example.persistence.model.Balance;
 import org.example.persistence.model.ConvertTransaction;
 import org.example.service.PersistenceService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,16 +49,24 @@ public class PersistenceServiceImpl implements PersistenceService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void convert(Conversion conversion, List<Balance> clientBalances) {
+    public ConvertTransaction convert(
+            CreateCurrencyConversionRequest conversion,
+            BigDecimal conversionRate,
+            LocalDateTime timestamp,
+            BigDecimal targetAmountCredit,
+            BigDecimal newTargetBalance,
+            BigDecimal newSourceBalance,
+            List<Balance> clientBalances
+    ) {
         ConvertTransaction transaction = new ConvertTransaction();
-        transaction.setTimestamp(conversion.getTimestamp());
-        transaction.setSourceAmount(conversion.getSourceAmount());
-        transaction.setSourceCurrency(currencyRepository.findByCode(conversion.getSourceCurrencyCode()).get()); // TODO handle optional
-        transaction.setTargetAmount(conversion.getTargetAmount());
-        transaction.setTargetCurrency(currencyRepository.findByCode(conversion.getTargetCurrencyCode()).get()); // TODO handle optional
-        transaction.setConversionRate(conversion.getConversionRate());
-        transaction.setNewSourceBalance(conversion.getNewSourceBalance());
-        transaction.setNewTargetBalance(conversion.getNewTargetBalance());
+        transaction.setTimestamp(timestamp);
+        transaction.setSourceAmount(conversion.getAmount());
+        transaction.setSourceCurrency(currencyRepository.findByCode(conversion.getSourceCurrency()).get()); // TODO handle optional
+        transaction.setTargetAmount(targetAmountCredit);
+        transaction.setTargetCurrency(currencyRepository.findByCode(conversion.getTargetCurrency()).get()); // TODO handle optional
+        transaction.setConversionRate(conversionRate);
+        transaction.setNewSourceBalance(newSourceBalance);
+        transaction.setNewTargetBalance(newTargetBalance);
         transaction.setClient(clientRepository.findById(conversion.getClientId()).get()); // TODO handle optional
         transactionRepository.save(transaction);
 
@@ -62,12 +74,12 @@ public class PersistenceServiceImpl implements PersistenceService {
         boolean updatedSourceAmount = false;
         boolean updatedTargetAmount = false;
         for (Balance balance : clientBalances) {
-            if (balance.getCurrency().getCode().equals(conversion.getSourceCurrencyCode())) {
-                balance.setAmount(conversion.getNewSourceBalance());
+            if (balance.getCurrency().getCode().equals(conversion.getSourceCurrency())) {
+                balance.setAmount(newSourceBalance);
                 updatedSourceAmount = true;
                 balanceRepository.save(balance);
-            } else if (balance.getCurrency().getCode().equals(conversion.getTargetCurrencyCode())) {
-                balance.setAmount(conversion.getNewTargetBalance());
+            } else if (balance.getCurrency().getCode().equals(conversion.getTargetCurrency())) {
+                balance.setAmount(newTargetBalance);
                 updatedTargetAmount = true;
                 balanceRepository.save(balance);
             }
@@ -76,5 +88,22 @@ public class PersistenceServiceImpl implements PersistenceService {
         if (!updatedSourceAmount || !updatedTargetAmount) { // TODO better exception
             throw new IllegalStateException("Failed to update account balances. Reverting everything.");
         }
+
+        return transaction;
+    }
+
+    @Override
+    public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedByClientId(Long clientId, Pageable pageable) {
+        return transactionRepository.findByClientId(clientId, pageable);
+    }
+
+    @Override
+    public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedById(Long id, Pageable pageable) {
+        return transactionRepository.findById(id, pageable);
+    }
+
+    @Override
+    public Page<ConvertTransaction> getCurrencyConversionTransactionsPaginatedByTimestamp(LocalDateTime timestamp, Pageable pageable) {
+        return transactionRepository.findByTimestamp(timestamp, pageable);
     }
 }

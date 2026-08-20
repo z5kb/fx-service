@@ -2,14 +2,18 @@ package org.example.service.impl;
 
 import org.example.model.Balance;
 import org.example.model.Conversion;
+import org.example.model.CreateCurrencyConversionRequest;
 import org.example.persistence.model.ConvertTransaction;
 import org.example.service.ApiClientService;
 import org.example.service.FxService;
 import org.example.service.PersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +44,7 @@ public class FxServiceImpl implements FxService {
     }
 
     @Override
-    public BigDecimal getConversionRate(String from, String to) {
+    public BigDecimal getExchangeRate(String from, String to) {
         return apiClientService.fetch(from).getCurrencyRates().get(to);
     }
 
@@ -58,43 +62,76 @@ public class FxServiceImpl implements FxService {
     }
 
     @Override
-    public ConvertTransaction createConversion(Long clientId, String sourceCurrency, BigDecimal sourceAmount, String targetCurrency) {
-        List<org.example.persistence.model.Balance> clientBalances = persistenceService.getBalances(clientId);
+    public Conversion createConversion(CreateCurrencyConversionRequest req) {
+        List<org.example.persistence.model.Balance> clientBalances = persistenceService.getBalances(req.getClientId());
         BigDecimal sourceBalance = null;
         BigDecimal targetBalance = null;
         for (org.example.persistence.model.Balance balance : clientBalances) {
-            if (balance.getCurrency().getCode().equals(sourceCurrency)) { sourceBalance = balance.getAmount(); }
-            if (balance.getCurrency().getCode().equals(targetCurrency)) { targetBalance = balance.getAmount(); }
+            if (balance.getCurrency().getCode().equals(req.getSourceCurrency())) { sourceBalance = balance.getAmount(); }
+            if (balance.getCurrency().getCode().equals(req.getTargetCurrency())) { targetBalance = balance.getAmount(); }
         }
         // TODO throw exception - client trying to convert from/to currency they don't own
         assert sourceBalance != null;
         assert targetBalance != null;
 
-        BigDecimal newSourceBalance = sourceBalance.subtract(sourceAmount);
+        BigDecimal newSourceBalance = sourceBalance.subtract(req.getAmount());
         // TODO throw exception - client doesn't have enough source money
         assert newSourceBalance.compareTo(BigDecimal.ZERO) >= 0;
 
-        BigDecimal conversionRate = getConversionRate(sourceCurrency, targetCurrency);
-        BigDecimal targetAmountCredit = sourceAmount.multiply(conversionRate) ;
+        BigDecimal conversionRate = getExchangeRate(req.getSourceCurrency(), req.getTargetCurrency());
+        BigDecimal targetAmountCredit = req.getAmount().multiply(conversionRate) ;
         BigDecimal newTargetBalance = targetBalance.add(targetAmountCredit);
 
+        ConvertTransaction convertTransaction = persistenceService.convert(
+                req,
+                conversionRate,
+                LocalDateTime.now(),
+                targetAmountCredit,
+                newTargetBalance,
+                newSourceBalance,
+                clientBalances
+        );
+
         Conversion conversion = new Conversion();
-        conversion.setClientId(clientId);
-        conversion.setSourceCurrencyCode(sourceCurrency);
-        conversion.setSourceAmount(sourceAmount);
-        conversion.setTargetCurrencyCode(targetCurrency);
-        conversion.setConversionRate(conversionRate);
-        conversion.setTimestamp(LocalDateTime.now());
-        conversion.setTargetAmount(targetAmountCredit);
-        conversion.setNewTargetBalance(newTargetBalance);
-        conversion.setNewSourceBalance(newSourceBalance);
-        persistenceService.convert(conversion, clientBalances);
+        conversion.setTimestamp(convertTransaction.getTimestamp());
+        conversion.setSourceAmount(convertTransaction.getSourceAmount());
+        conversion.setSourceCurrencyCode(convertTransaction.getSourceCurrency().getCode());
+        conversion.setTargetAmount(convertTransaction.getTargetAmount());
+        conversion.setTargetCurrencyCode(convertTransaction.getTargetCurrency().getCode());
+        conversion.setConversionRate(convertTransaction.getConversionRate());
+        conversion.setNewSourceBalance(convertTransaction.getNewSourceBalance());
+        conversion.setNewTargetBalance(convertTransaction.getNewTargetBalance());
+        conversion.setClientId(convertTransaction.getClient().getId());
+        return conversion;
+    }
 
-        return null;
+    @Override
+    public Page<Conversion> getConversions(Long transactionId, LocalDateTime timestamp, Long clientId, Pageable pageable) {
 
-//        transaction.setTargetAmount(conversion.getTargetAmount());
-//        transaction.setNewSourceBalance(conversion.getNewSourceBalance());
-//        transaction.setNewTargetBalance(conversion.getNewTargetBalance());
+        Page<ConvertTransaction> convertTransactions;
+        if (clientId != null) {
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByClientId(clientId, pageable);;
+        } else if (transactionId != null) {
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedById(transactionId, pageable);;
+        } else if (timestamp != null) {
+            convertTransactions = persistenceService.getCurrencyConversionTransactionsPaginatedByTimestamp(timestamp, pageable);;
+        } else { // this should never be reached as it's being checked in the controller as well
+            throw new IllegalArgumentException("At least 1 parameter was expected to not be null.");
+        }
+
+        return convertTransactions.map( rawConversion -> {
+            Conversion conversion = new Conversion();
+            conversion.setTimestamp(rawConversion.getTimestamp());
+            conversion.setSourceAmount(rawConversion.getSourceAmount());
+            conversion.setSourceCurrencyCode(rawConversion.getSourceCurrency().getCode());
+            conversion.setTargetAmount(rawConversion.getTargetAmount());
+            conversion.setTargetCurrencyCode(rawConversion.getTargetCurrency().getCode());
+            conversion.setConversionRate(rawConversion.getConversionRate());
+            conversion.setNewSourceBalance(rawConversion.getNewSourceBalance());
+            conversion.setNewTargetBalance(rawConversion.getNewTargetBalance());
+            conversion.setClientId(rawConversion.getClient().getId());
+            return conversion;
+        });
     }
 
     private void fetchFxRatesDataAndReschedule(String currency) {
