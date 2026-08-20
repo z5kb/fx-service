@@ -26,9 +26,9 @@ public class ApiClientServiceImpl implements ApiClientService {
     public ApiClientServiceImpl(CachingService cachingService) { this.cachingService = cachingService; }
 
     @Override
-    public synchronized FxRatesApiClientResponse fetch() {
+    public synchronized FxRatesApiClientResponse fetch(String currency) {
         // check for cached data
-        FxRatesApiClientResponse cachedData = cachingService.getFxRatesData();
+        FxRatesApiClientResponse cachedData = cachingService.getFxRatesData(currency);
         if (cachedData != null) {
             System.out.println("did not call the API, there is valid cached data");
             return cachedData;
@@ -36,7 +36,7 @@ public class ApiClientServiceImpl implements ApiClientService {
 
         // no cached data, call the API
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(GET_FX_RATES_REQUEST_URL)).GET().build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(GET_FX_RATES_REQUEST_BASE_URL + currency)).GET().build();
         try {
             HttpResponse<String> responseRaw = client.send(request, HttpResponse.BodyHandlers.ofString());
 
@@ -67,7 +67,7 @@ public class ApiClientServiceImpl implements ApiClientService {
     }
 
     // The URL which provides the FX rates
-    private static final String GET_FX_RATES_REQUEST_URL = "https://open.er-api.com/v6/latest/USD";
+    private static final String GET_FX_RATES_REQUEST_BASE_URL = "https://open.er-api.com/v6/latest/";
 
     // The keyword which is used to indicate whether the request was successful and is returned inside
     // the request body (not the HTTP status code).

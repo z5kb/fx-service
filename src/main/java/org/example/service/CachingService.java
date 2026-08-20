@@ -6,5 +6,5 @@ public interface CachingService {
 
     void cacheFxRatesData(FxRatesApiClientResponse response);
 
-    FxRatesApiClientResponse getFxRatesData();
+    FxRatesApiClientResponse getFxRatesData(String currency);
 }

@@ -1,6 +1,5 @@
 package org.example;
 
-import org.example.service.ApiClientService;
 import org.example.service.FxService;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -17,7 +16,9 @@ public class FxServiceApplication {
     @Bean
     public CommandLineRunner run(FxService fxService) {
         return args -> { // TODO remove this and use FxController exclusively
-            fxService.prepareFxRatesData();
+            fxService.prepareFxRatesData("EUR");
+            fxService.getConversionRate("USD", "EUR");
+            fxService.getBalances(1L);
         };
     }
 

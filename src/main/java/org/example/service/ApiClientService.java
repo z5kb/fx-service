@@ -4,5 +4,5 @@ import org.example.model.FxRatesApiClientResponse;
 
 public interface ApiClientService {
 
-    public FxRatesApiClientResponse fetch();
+    public FxRatesApiClientResponse fetch(String currency);
 }

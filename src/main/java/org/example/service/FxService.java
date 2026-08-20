@@ -1,6 +1,17 @@
 package org.example.service;
 
+
+import org.example.model.Balance;
+
+import java.math.BigDecimal;
+import java.util.List;
+
 public interface FxService {
 
-    void prepareFxRatesData();
+    void prepareFxRatesData(String currency);
+
+    // get the current exchange rate between 2 currencies
+    public BigDecimal getConversionRate(String from, String to);
+
+    public List<Balance> getBalances(Long clientId);
 }

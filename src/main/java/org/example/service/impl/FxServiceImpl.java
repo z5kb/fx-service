@@ -1,10 +1,15 @@
 package org.example.service.impl;
 
+import org.example.model.Balance;
 import org.example.service.ApiClientService;
 import org.example.service.FxService;
+import org.example.service.PersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -18,24 +23,47 @@ public class FxServiceImpl implements FxService {
 
     private final ApiClientService apiClientService;
 
+    private final PersistenceService persistenceService;
+
     @Autowired
-    public FxServiceImpl(ApiClientService apiClientService) { this.apiClientService = apiClientService; }
+    public FxServiceImpl(ApiClientService apiClientService, PersistenceService persistenceService) {
+        this.apiClientService = apiClientService;
+        this.persistenceService = persistenceService;
+    }
 
     @Override
-    public void prepareFxRatesData() { // TODO make sure this is multi-thread-safe (probably not)
-        fetchFxRatesDataAndReschedule();
+    public void prepareFxRatesData(String currency) { // TODO make sure this is multi-thread-safe (probably not)
+        fetchFxRatesDataAndReschedule(currency);
     }
 
-    private void fetchFxRatesDataAndReschedule() {
-        scheduleFxRatesDataFetch(apiClientService.fetch().getTimeNextUpdateTimestamp());
+    @Override
+    public BigDecimal getConversionRate(String from, String to) {
+        return apiClientService.fetch(from).getCurrencyRates().get(to);
     }
 
-    private void scheduleFxRatesDataFetch(Long timestamp) {
+    @Override
+    public List<Balance> getBalances(Long clientId) {
+        List<org.example.persistence.model.Balance> balancesRaw = persistenceService.getBalances(clientId);
+        ArrayList<Balance> result = new ArrayList<>();
+        for ( org.example.persistence.model.Balance balanceRaw : balancesRaw ) {
+            Balance balance = new Balance();
+            balance.setCurrencyCode(balanceRaw.getCurrency().getCode());
+            balance.setAmount(balanceRaw.getAmount());
+            result.add(balance);
+        }
+        return result;
+    }
+
+    private void fetchFxRatesDataAndReschedule(String currency) {
+        scheduleFxRatesDataFetch(apiClientService.fetch(currency).getTimeNextUpdateTimestamp(), currency);
+    }
+
+    private void scheduleFxRatesDataFetch(Long timestamp, String currency) {
         long delay = timestamp - System.currentTimeMillis() / 1000;
         if (delay <= 0) { // if already expired, run now
-            fetchFxRatesDataAndReschedule();
+            fetchFxRatesDataAndReschedule(currency);
         } else {
-            scheduler.schedule(this::fetchFxRatesDataAndReschedule, delay, TimeUnit.SECONDS);
+            scheduler.schedule(() -> fetchFxRatesDataAndReschedule(currency), delay, TimeUnit.SECONDS);
         }
     }
 }

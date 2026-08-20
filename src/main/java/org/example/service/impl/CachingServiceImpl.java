@@ -22,13 +22,13 @@ public class CachingServiceImpl implements CachingService {
 
     @Override
     public void cacheFxRatesData(FxRatesApiClientResponse response) {
-        redis().setex(FX_API_DATA_REDIS_KEY, response.getTimeNextUpdateTimestamp(), gson.toJson(response));
-        System.out.println("cached " + FX_API_DATA_REDIS_KEY);
+        redis().setex(response.getBaseCurrencyCode(), response.getTimeNextUpdateTimestamp(), gson.toJson(response));
+        System.out.println("cached " + response.getBaseCurrencyCode()); // TODO remove
     }
 
     @Override
-    public FxRatesApiClientResponse getFxRatesData() {
-        String dataRaw = redis().get(FX_API_DATA_REDIS_KEY);
+    public FxRatesApiClientResponse getFxRatesData(String currency) {
+        String dataRaw = redis().get(currency);
         return gson.fromJson(dataRaw, FxRatesApiClientResponse.class);
     }
 
@@ -42,5 +42,4 @@ public class CachingServiceImpl implements CachingService {
 
     private final String REDIS_HOST = "localhost";
     private final int REDIS_PORT = 6379;
-    private final String FX_API_DATA_REDIS_KEY = "fx-api-data";
 }
