@@ -1,0 +1,30 @@
+services:
+  redis:
+    image: redis:latest
+    container_name: fx-service-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+#  fx-service:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    image: fx-service-image
+#    container_name: fx-service
+#    ports:
+#      - "8080:8080"
+#    restart: unless-stopped
+#
+#    environment:
+#      - debug=true
+#      - SPRING_DATA_REDIS_HOST=redis
+#      - SPRING_DATA_REDIS_PORT=6379
+#    command: ["java", "-jar", "target/fx-service-1.0-SNAPSHOT.jar"]
+
+volumes:
+  redis-data:
+    driver: local
