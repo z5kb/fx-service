@@ -17,11 +17,6 @@ public class FxServiceApplication {
 
     @Bean
     public CommandLineRunner run(FxService fxService) {
-        return args -> { // TODO remove this and use FxController exclusively
-            fxService.prepareFxRatesData("EUR");
-//            fxService.getConversionRate("USD", "EUR");
-//            fxService.getBalances(1L);
-        };
+        return args -> {};
     }
-
 }

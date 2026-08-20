@@ -15,6 +15,9 @@ public class ConvertTransaction {
 
     private String idempotencyKey;
 
+    @Version
+    private Long version;
+
     private LocalDateTime timestamp;
 
     private BigDecimal sourceAmount;
